@@ -1,0 +1,6 @@
+{
+        "port": "8000",
+        "reload_interval" : 30,
+        "sources": [ "http://urlone.com",
+                        "http://urltwo.com"]
+}
