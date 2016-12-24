@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 )
 
 var youtubeFeed map[string]interface{}
@@ -32,12 +31,16 @@ func loadYoutube() {
 	content, err := ioutil.ReadAll(res.Body)
 	checkError(err)
 
+	a1 := content
+	b1 := content
+
 	// vids := videos{}
 	if err := json.Unmarshal(content, &youtubeFeed); err != nil {
 		checkError(err)
 	}
 
 	//fmt.Printf("%s \n\n\n", vids)
-	fmt.Printf("%s \n", reflect.TypeOf(youtubeFeed["items"]))
+	fmt.Printf("%s \n", youtubeFeed["items"])
+	fmt.Printf("a1 %s, b1 %s \n", len(a1), len(b1))
 
 }
