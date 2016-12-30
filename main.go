@@ -8,6 +8,12 @@ func checkError(e error) {
 	}
 }
 
+func checkWarnning(e error) {
+	if e != nil {
+		log.Printf("Warning: %s \n", e)
+	}
+}
+
 func main() {
 	loadConfigValues()
 
