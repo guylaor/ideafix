@@ -5,20 +5,38 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"time"
 )
 
-var youtubeFeed map[string]interface{}
+type youtubeFeed struct {
+	NextPageToken string                 `json:"nextPageToken"`
+	Info          map[string]interface{} `json:"pageInfo"`
+	Items         []struct {
+		Snippet struct {
+			Title       string `json:"title"`
+			Description string `json:"description"`
+			PublishedAt string `json:"publishedAt"`
+			Resource    struct {
+				VideoID string `json:"videoId"`
+			} `json:"resourceId"`
+			Thumbnails map[string]struct {
+				Url string `json:"url"`
+			} `json:"thumbnails"`
+		} `json:"snippet"`
+	} `json:"items"`
+}
 
-//var youtubeItems []interface{}
+type VideoFeed []struct {
+	Title       string
+	Description string
+	PublishDate string
+	YoutubueID  string
+	Thumbnails  map[string]struct {
+		Url string
+	}
+}
 
-// type videos struct {
-// 	Kind  string                 `json:"kind"`
-// 	Items map[string]interface{} `json:"items"`
-// }
-
-func loadYoutube() {
+func doYoutubeAPIRequest() []byte {
 
 	req, _ := http.NewRequest("GET", "https://www.googleapis.com/youtube/v3/playlistItems", nil)
 
@@ -27,7 +45,7 @@ func loadYoutube() {
 	q.Add("maxResults", "50")
 	q.Add("playlistId", fmt.Sprint(config["youtube-playlistid"]))
 	q.Add("key", fmt.Sprint(config["youtube-key"]))
-	//q.Add("pageToken", "[nextpagetoker]")
+	q.Add("pageToken", "CDIQAA")
 	req.URL.RawQuery = q.Encode()
 
 	var client = &http.Client{
@@ -36,34 +54,28 @@ func loadYoutube() {
 	res, err := client.Do(req)
 	if err != nil {
 		checkWarnning(err)
-		return
 	}
 
 	content, err := ioutil.ReadAll(res.Body)
 	checkWarnning(err)
 
-	a1 := content
-	b1 := content
+	return content
+}
 
-	// vids := videos{}
-	if err := json.Unmarshal(content, &youtubeFeed); err != nil {
+func loadYoutube() {
+
+	content := doYoutubeAPIRequest()
+
+	var feed youtubeFeed
+	if err := json.Unmarshal(content, &feed); err != nil {
 		checkWarnning(err)
 	}
 
-	//fmt.Printf("%s \n\n\n", vids)
-	fmt.Printf("%s \n", youtubeFeed["items"])
-	fmt.Printf("a1 %s, b1 %s \n", len(a1), len(b1))
+	fmt.Println(feed)
+	fmt.Println(feed.Info["totalResults"])
+	fmt.Println(feed.Items[0].Snippet.Title)
+	fmt.Println(feed.Items[0].Snippet.Resource.VideoID)
+	fmt.Println(feed.Items[0].Snippet.Thumbnails["default"].Url)
 
-	fmt.Printf("%s \n", reflect.TypeOf(youtubeFeed["items"]))
-	// pasing the youtube feed
-	youtubeItems := youtubeFeed["items"].([]interface{})
-	for _, item := range youtubeItems {
-		viditem := item.(map[string]interface{})
-		snippet := viditem["snippet"].(map[string]interface{})
-		//thumbs := snippet["thumbnails"].(map[string]interface{})
-		//kind := viditem["kind"].(string)
-		fmt.Printf("\n============\n %s, %s", snippet["title"], snippet["description"])
-	}
-
-	fmt.Printf("\n %s", req.URL.String())
+	//fmt.Printf("\n %s", req.URL.String())
 }
