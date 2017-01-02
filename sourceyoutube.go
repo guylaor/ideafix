@@ -26,17 +26,20 @@ type youtubeFeed struct {
 	} `json:"items"`
 }
 
-type VideoFeed []struct {
-	Title       string
-	Description string
-	PublishDate string
-	YoutubueID  string
-	Thumbnails  map[string]struct {
-		Url string
-	}
+type VideoItem struct {
+	Title         string
+	Description   string
+	PublishDate   string
+	YoutubueID    string
+	ThumbSmall    string
+	ThumbMedium   string
+	ThumbHigh     string
+	ThumbStandard string
 }
 
-func doYoutubeAPIRequest() []byte {
+type VideoFeed []VideoItem
+
+func doYoutubeAPIRequest(token string, videoFeed *VideoFeed) string {
 
 	req, _ := http.NewRequest("GET", "https://www.googleapis.com/youtube/v3/playlistItems", nil)
 
@@ -45,7 +48,9 @@ func doYoutubeAPIRequest() []byte {
 	q.Add("maxResults", "50")
 	q.Add("playlistId", fmt.Sprint(config["youtube-playlistid"]))
 	q.Add("key", fmt.Sprint(config["youtube-key"]))
-	q.Add("pageToken", "CDIQAA")
+	if token != "" {
+		q.Add("pageToken", token)
+	}
 	req.URL.RawQuery = q.Encode()
 
 	var client = &http.Client{
@@ -59,23 +64,51 @@ func doYoutubeAPIRequest() []byte {
 	content, err := ioutil.ReadAll(res.Body)
 	checkWarnning(err)
 
-	return content
-}
-
-func loadYoutube() {
-
-	content := doYoutubeAPIRequest()
-
 	var feed youtubeFeed
 	if err := json.Unmarshal(content, &feed); err != nil {
 		checkWarnning(err)
 	}
 
-	fmt.Println(feed)
-	fmt.Println(feed.Info["totalResults"])
-	fmt.Println(feed.Items[0].Snippet.Title)
-	fmt.Println(feed.Items[0].Snippet.Resource.VideoID)
-	fmt.Println(feed.Items[0].Snippet.Thumbnails["default"].Url)
+	for _, item := range feed.Items {
+		v := VideoItem{}
+		v.Title = item.Snippet.Title
+		v.Description = item.Snippet.Description
+		v.PublishDate = item.Snippet.PublishedAt
+		v.ThumbSmall = item.Snippet.Thumbnails["default"].Url
+		v.ThumbMedium = item.Snippet.Thumbnails["medium"].Url
+		v.ThumbHigh = item.Snippet.Thumbnails["high"].Url
+		v.ThumbStandard = item.Snippet.Thumbnails["standard"].Url
+		v.YoutubueID = item.Snippet.Resource.VideoID
+		*videoFeed = append(*videoFeed, v)
+	}
+
+	fmt.Printf("\n %s", req.URL.String())
+	return feed.NextPageToken
+
+}
+
+func loadYoutube() {
+
+	videoFeed := make(VideoFeed, 0)
+	token := doYoutubeAPIRequest("", &videoFeed)
+	for {
+		if token == "" {
+			break
+		}
+		token = doYoutubeAPIRequest(token, &videoFeed)
+	}
+
+	fmt.Println(len(videoFeed))
+	fmt.Println(videoFeed[0].Title)
+
+	videoFeedJson, err := json.Marshal(videoFeed)
+	checkWarnning(err)
+
+	fmt.Printf("%s", videoFeedJson)
+	// fmt.Println(feed.Info["totalResults"])
+	// fmt.Println(feed.Items[0].Snippet.Title)
+	// fmt.Println(feed.Items[0].Snippet.Resource.VideoID)
+	// fmt.Println(feed.Items[0].Snippet.Thumbnails["default"].Url)
 
 	//fmt.Printf("\n %s", req.URL.String())
 }
