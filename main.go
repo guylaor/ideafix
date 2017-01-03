@@ -17,5 +17,6 @@ func checkWarnning(e error) {
 func main() {
 	loadConfigValues()
 
-	loadYoutube()
+	//loadYoutube()
+	loadFacebook()
 }

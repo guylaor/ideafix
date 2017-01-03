@@ -101,14 +101,9 @@ func loadYoutube() {
 	fmt.Println(len(videoFeed))
 	fmt.Println(videoFeed[0].Title)
 
-	videoFeedJson, err := json.Marshal(videoFeed)
-	checkWarnning(err)
-
-	fmt.Printf("%s", videoFeedJson)
-	// fmt.Println(feed.Info["totalResults"])
-	// fmt.Println(feed.Items[0].Snippet.Title)
-	// fmt.Println(feed.Items[0].Snippet.Resource.VideoID)
-	// fmt.Println(feed.Items[0].Snippet.Thumbnails["default"].Url)
+	for _, v := range videoFeed {
+		v.upsert()
+	}
 
 	//fmt.Printf("\n %s", req.URL.String())
 }
